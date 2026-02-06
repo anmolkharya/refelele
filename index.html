@@ -3,686 +3,440 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PhD Research Dashboard: MSW & E-Waste Analysis</title>
-    <!-- Tailwind CSS -->
+    <title>Referlele - Market Strategy Dashboard v17.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Chosen Palette: Scholarly Slate & Teal -->
-    <!-- Primary Background: #f8fafc (Slate 50) - Warm neutral light -->
-    <!-- Primary Text: #1e293b (Slate 800) -->
-    <!-- Accent Color: #0d9488 (Teal 600) - For calls to action and highlights -->
-    <!-- Secondary Accent: #f59e0b (Amber 500) - For warnings/gaps -->
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f8fafc;
-            color: #1e293b;
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .chart-container { position: relative; width: 100%; height: 320px; }
+        .nav-item.active { background-color: #4f46e5; color: white; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); }
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .table-container { 
+            overflow-x: auto; 
+            background: white; 
+            border-radius: 0.75rem; 
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
         }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 400px;
-        }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 350px;
-            }
-        }
-        .card {
-            background: white;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s;
-        }
-        .card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .nav-item.active {
-            border-bottom: 2px solid #0d9488;
-            color: #0d9488;
-            font-weight: 600;
-        }
-        /* Custom Scrollbar for tables */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-    </style>
-    <!-- Application Structure Plan: 
-         1. Dashboard Overview: High-level metrics (Papers analyzed, key themes) and visual distribution of methodologies and gap saturation.
-         2. Literature Explorer: Interactive cards for each of the 7 papers, allowing deep dives into their specific narratives, variables, and findings.
-         3. Gap Analysis Matrix: The core "Spreadsheet" view requested. A table linking specific gaps to papers, describing the finding, and proposing PhD utility. Includes CSV Export.
-         4. PhD Framework Builder: A synthesis section suggesting research pathways based on the aggregated data.
-         Why: This structure moves from general context -> specific evidence -> synthesis/application, mirroring the PhD research process.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-</head>
-<body class="min-h-screen flex flex-col">
+        .table-container::-webkit-scrollbar { height: 10px; }
+        .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
+        .sticky-col { position: sticky; left: 0; background-color: inherit; z-index: 20; border-right: 2px solid #f1f5f9; }
+        
+        /* Row Styling */
+        .referlele-row { background-color: #eef2ff; border-left: 4px solid #4f46e5; }
+        .priority-row { background-color: #fffbeb; border-left: 4px solid #f59e0b; }
+        .secondary-row { background-color: #fff; border-left: 4px solid transparent; }
+        .secondary-row:hover { background-color: #f8fafc; }
 
-    <!-- Navigation -->
+        /* SWOT Colors */
+        .swot-s { border-top: 4px solid #10b981; }
+        .swot-w { border-top: 4px solid #f59e0b; }
+        .swot-o { border-top: 4px solid #3b82f6; }
+        .swot-t { border-top: 4px solid #ef4444; }
+    </style>
+</head>
+<body class="antialiased bg-slate-50">
+
+    <!-- Navbar -->
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <i class="fa-solid fa-graduation-cap text-teal-600 text-2xl mr-3"></i>
-                    <span class="font-bold text-xl tracking-tight text-slate-800">PhD Research Scope: MSW & E-Waste</span>
+        <div class="max-w-[1600px] mx-auto px-4 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl font-bold text-indigo-700 tracking-tight">Referlele<span class="text-slate-400 font-normal ml-1 text-lg">Intel Hub</span></span>
                 </div>
-                <div class="hidden md:flex space-x-8">
-                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item active px-3 py-5 text-sm font-medium transition-colors">Dashboard</button>
-                    <button onclick="navigate('literature')" id="nav-literature" class="nav-item px-3 py-5 text-sm font-medium transition-colors">Literature Review</button>
-                    <button onclick="navigate('gaps')" id="nav-gaps" class="nav-item px-3 py-5 text-sm font-medium transition-colors">Gap Matrix</button>
-                    <button onclick="navigate('synthesis')" id="nav-synthesis" class="nav-item px-3 py-5 text-sm font-medium transition-colors">PhD Framework</button>
+                <div class="flex space-x-1 overflow-x-auto no-scrollbar">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active px-5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">Dashboard</button>
+                    <button onclick="switchTab('swot')" id="nav-swot" class="nav-item px-5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">SWOT</button>
+                    <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-item px-5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">Analytics</button>
+                    <button onclick="switchTab('matrix')" id="nav-matrix" class="nav-item px-5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap">Full Matrix</button>
                 </div>
-                <!-- Mobile menu button placeholder (simple implementation) -->
-                <div class="md:hidden flex items-center">
-                    <button onclick="toggleMobileMenu()" class="text-slate-500 hover:text-slate-700">
-                        <i class="fa-solid fa-bars text-xl"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-200">
-            <div class="flex flex-col px-4 py-2 space-y-2">
-                <button onclick="navigate('dashboard')" class="text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded">Dashboard</button>
-                <button onclick="navigate('literature')" class="text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded">Literature Review</button>
-                <button onclick="navigate('gaps')" class="text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded">Gap Matrix</button>
-                <button onclick="navigate('synthesis')" class="text-left px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded">PhD Framework</button>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content Area -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <main class="max-w-[1600px] mx-auto px-4 lg:px-8 py-8">
 
-        <!-- VIEW: DASHBOARD -->
-        <div id="view-dashboard" class="space-y-8 animate-fade-in">
-            <header class="mb-8">
-                <h1 class="text-3xl font-bold text-slate-900">Research Landscape Overview</h1>
-                <p class="mt-2 text-slate-600 max-w-3xl">
-                    This interactive dashboard synthesizes insights from 7 critical papers covering Municipal Solid Waste (MSW) and E-Waste management.
-                    It identifies structural gaps, methodology trends, and opportunities for your PhD thesis, prioritizing recent literature (2022-2025).
-                </p>
-            </header>
-
-            <!-- Key Metrics -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="card p-6 border-l-4 border-teal-500">
-                    <div class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Papers Analyzed</div>
-                    <div class="mt-2 text-4xl font-bold text-slate-800">7</div>
-                    <div class="mt-1 text-sm text-slate-400">Primary Sources</div>
-                </div>
-                <div class="card p-6 border-l-4 border-amber-500">
-                    <div class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Major Gaps Identified</div>
-                    <div class="mt-2 text-4xl font-bold text-slate-800">12</div>
-                    <div class="mt-1 text-sm text-slate-400">Opportunities for Thesis</div>
-                </div>
-                <div class="card p-6 border-l-4 border-blue-500">
-                    <div class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Key Methodologies</div>
-                    <div class="mt-2 text-4xl font-bold text-slate-800">3</div>
-                    <div class="mt-1 text-sm text-slate-400">Qual, Quant, Mixed</div>
-                </div>
-                <div class="card p-6 border-l-4 border-indigo-500">
-                    <div class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Latest Publication</div>
-                    <div class="mt-2 text-4xl font-bold text-slate-800">2026</div>
-                    <div class="mt-1 text-sm text-slate-400">Anthropic Econ Index</div>
-                </div>
-            </div>
-
-            <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Visualization & Content Choices: 
-                     Goal: Visualize the saturation of research topics to find the "White Space" for the PhD.
-                     Viz: Bar Chart. Shows which gaps are heavily addressed vs. lightly addressed.
-                -->
-                <div class="card p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">Research Gap Saturation</h3>
-                    <p class="text-sm text-slate-500 mb-4">Indicates how frequently specific themes appear as "limitations" or "future scope" in the analyzed papers.</p>
-                    <div class="chart-container">
-                        <canvas id="gapChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Visualization & Content Choices:
-                     Goal: Understand the methodological bias in current literature.
-                     Viz: Doughnut Chart. Helps decide if the PhD should adopt a novel method (e.g., Mixed Method if underrepresented).
-                -->
-                <div class="card p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">Methodological Distribution</h3>
-                    <p class="text-sm text-slate-500 mb-4">Breakdown of research approaches used in the source papers.</p>
-                    <div class="chart-container">
-                        <canvas id="methodChart"></canvas>
-                    </div>
-                </div>
-            </div>
+        <!-- DASHBOARD VIEW -->
+        <section id="view-dashboard" class="space-y-8 fade-in">
             
-             <div class="card p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">Timeline of Relevance</h3>
-                    <p class="text-sm text-slate-500 mb-4">Publication year of analyzed sources, prioritizing recent works as requested.</p>
-                    <div class="chart-container">
-                        <canvas id="timelineChart"></canvas>
-                    </div>
-                </div>
-        </div>
-
-        <!-- VIEW: LITERATURE REVIEW -->
-        <div id="view-literature" class="hidden space-y-8 animate-fade-in">
-            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900">Literature Review Explorer</h1>
-                    <p class="mt-2 text-slate-600">Detailed analysis of the 7 selected papers. Click on a card to view detailed breakdown.</p>
-                </div>
-                <div class="mt-4 md:mt-0 flex space-x-2">
-                    <button onclick="filterLiterature('all')" class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition">All</button>
-                    <button onclick="filterLiterature('MSW')" class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition">MSW</button>
-                    <button onclick="filterLiterature('E-Waste')" class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition">E-Waste</button>
-                </div>
-            </header>
-
-            <div id="literature-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Cards will be injected by JS -->
-            </div>
-        </div>
-
-        <!-- VIEW: GAP MATRIX (THE REQUESTED SPREADSHEET) -->
-        <div id="view-gaps" class="hidden space-y-8 animate-fade-in">
-            <header class="flex flex-col md:flex-row justify-between items-end mb-8">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900">Strategic Gap Matrix</h1>
-                    <p class="mt-2 text-slate-600 max-w-3xl">
-                        A structured "gap-wise" analysis linking research voids to specific literature. 
-                        Use this table to pinpoint exactly where your PhD can contribute.
-                    </p>
-                </div>
-                <button onclick="downloadCSV()" class="mt-4 md:mt-0 flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition shadow">
-                    <i class="fa-solid fa-download mr-2"></i> Download as CSV
-                </button>
-            </header>
-
-            <div class="card overflow-hidden">
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Gap Category</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Supporting Literature</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">What Paper Says (Evidence)</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">PhD Application (How to use)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="gap-table-body" class="bg-white divide-y divide-slate-200 text-sm">
-                            <!-- Rows injected by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mt-6">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <i class="fa-solid fa-lightbulb text-amber-500"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm text-amber-700">
-                            <strong>Research Tip:</strong> The "Informal Sector Integration" gap appears in 4 out of 7 papers, making it a high-potential area for a centralized PhD thesis contribution.
-                        </p>
+            <!-- 1. EXECUTIVE SUMMARY (Added Back) -->
+            <div class="bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-2xl p-8 text-white shadow-lg border border-indigo-700">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-4 flex items-center gap-3">
+                            Executive Strategic Summary
+                            <span class="text-xs bg-indigo-600 text-indigo-100 px-2 py-1 rounded-full border border-indigo-500 font-medium">Market Pulse</span>
+                        </h1>
+                        <ul class="space-y-3 text-indigo-100 text-sm md:text-base max-w-5xl leading-relaxed">
+                            <li class="flex items-start">
+                                <span class="text-emerald-400 mr-2 mt-1">●</span>
+                                <span><strong>Market Polarization:</strong> The landscape is split between <strong>High-Volume Automation</strong> (US-led: JobRight, AIApply) and <strong>Manual Community Services</strong> (India-led: Referwale). There is a vacuum in the middle for a scalable, trusted platform.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-emerald-400 mr-2 mt-1">●</span>
+                                <span><strong>The "Trust vs. Speed" Gap:</strong> Competitors like <em>LazyApply</em> offer speed but are flagged as spam. Competitors like <em>Refer.me</em> offer peer connections but suffer from "ghosting". <strong>Referlele's winning wedge is "Verified Speed"</strong>—automating the connection but verifying the human identity.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-emerald-400 mr-2 mt-1">●</span>
+                                <span><strong>The "Bridge" Opportunity:</strong> A significant arbitrage opportunity exists in connecting Indian engineering talent (Supply) with Global/Remote roles (Demand). Current tools are either too localized or too generic.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-emerald-400 mr-2 mt-1">●</span>
+                                <span><strong>Critical Threat Vector:</strong> <strong>AIApply</strong> and <strong>JobRight</strong> are gaining viral traction (TikTok/Social). To compete, Referlele must position itself not just as a "Tool" but as a "Network" where membership implies quality.</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- VIEW: SYNTHESIS/FRAMEWORK -->
-        <div id="view-synthesis" class="hidden space-y-8 animate-fade-in">
-            <header class="mb-8">
-                <h1 class="text-3xl font-bold text-slate-900">Proposed PhD Framework</h1>
-                <p class="mt-2 text-slate-600">Based on the analysis, here is a structured pathway for your thesis.</p>
-            </header>
+            <!-- 2. COMPETITIVE LANDSCAPE (3-Column Layout) -->
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 items-stretch">
+                
+                <!-- COLUMN 1: REFERLELE (THE HERO) -->
+                <div class="xl:col-span-1 glass-card p-6 border-t-4 border-indigo-600 flex flex-col relative overflow-hidden bg-indigo-50/30">
+                    <span class="w-fit px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded uppercase mb-4">Our Base</span>
+                    <h2 class="text-3xl font-bold text-indigo-800 mb-2">Referlele</h2>
+                    <p class="text-sm text-slate-600 italic mb-8">"Verified Global Network"</p>
+                    
+                    <div class="space-y-6 flex-grow">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 font-bold text-sm mr-3 border border-indigo-100">1</div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">Verified Identity</h4>
+                                <p class="text-xs text-slate-500 leading-snug">LinkedIn + Work Email check.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 font-bold text-sm mr-3 border border-indigo-100">2</div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">Smart Matching</h4>
+                                <p class="text-xs text-slate-500 leading-snug">AI-driven relevance.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 font-bold text-sm mr-3 border border-indigo-100">3</div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">Incentivized</h4>
+                                <p class="text-xs text-slate-500 leading-snug">Credits ensure replies.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="card p-6">
-                    <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Primary Objectives</h3>
-                    <ul class="space-y-4">
-                        <li class="flex items-start">
-                            <i class="fa-solid fa-check-circle text-teal-500 mt-1 mr-3"></i>
-                            <span>Develop a hybrid model integrating informal waste pickers into the formal E-waste value chain using digital tracking.</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fa-solid fa-check-circle text-teal-500 mt-1 mr-3"></i>
-                            <span>Quantify the economic impact of "segregation at source" policies in Tier-2 Indian cities (referencing Indore model).</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fa-solid fa-check-circle text-teal-500 mt-1 mr-3"></i>
-                            <span>Assess the viability of AI-driven sorting mechanisms in low-resource municipal contexts.</span>
-                        </li>
+                <!-- COLUMN 2 (CENTER): THE 7 PRIORITY COMPETITORS -->
+                <div class="xl:col-span-2 glass-card p-6 border-t-4 border-amber-500 bg-white">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded uppercase">Direct Threats (7)</span>
+                        <div class="text-xs text-slate-400">High Impact / Direct Rivals</div>
+                    </div>
+
+                    <div id="priorityDashboardContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- JS Will Populate Priority Cards Here -->
+                    </div>
+                </div>
+
+                <!-- COLUMN 3 (RIGHT): SECONDARY & OTHERS -->
+                <div class="xl:col-span-1 glass-card p-6 border-l-4 border-slate-200 bg-slate-50 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="px-2 py-1 bg-slate-200 text-slate-600 text-xs font-bold rounded uppercase">Secondary Market</span>
+                        <div class="text-xs text-slate-400 font-bold">19 Players</div>
+                    </div>
+                    
+                    <div id="secondaryDashboardContainer" class="space-y-5 overflow-y-auto pr-2 max-h-[600px] scrollbar-thin">
+                        <!-- JS Will Populate Secondary Lists Here -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SWOT ANALYSIS VIEW -->
+        <section id="view-swot" class="hidden space-y-8 fade-in">
+            <h2 class="text-2xl font-bold text-slate-900">SWOT Analysis</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- STRENGTHS -->
+                <div class="glass-card p-6 swot-s bg-emerald-50/20">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">💪</span>
+                        <h3 class="text-lg font-bold text-emerald-800">Strengths (Internal)</h3>
+                    </div>
+                    <ul class="space-y-3">
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• Verification Tech:</span> Integration of LinkedIn + Work Email builds instant trust.</li>
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• Hybrid Model:</span> Combines AI matching speed with Community human touch.</li>
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• UX Focus:</span> "5 Minutes to Value" promise beats clunky forums.</li>
                     </ul>
                 </div>
+                <!-- WEAKNESSES -->
+                <div class="glass-card p-6 swot-w bg-amber-50/20">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">⚠️</span>
+                        <h3 class="text-lg font-bold text-amber-800">Weaknesses (Internal)</h3>
+                    </div>
+                    <ul class="space-y-3">
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• Cold Start:</span> Launching with 0 users vs competitors with 2M+ traffic.</li>
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• Tech Complexity:</span> Verifying work emails globally is hard.</li>
+                    </ul>
+                </div>
+                <!-- OPPORTUNITIES -->
+                <div class="glass-card p-6 swot-o bg-blue-50/20">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">🚀</span>
+                        <h3 class="text-lg font-bold text-blue-800">Opportunities (External)</h3>
+                    </div>
+                    <ul class="space-y-3">
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• Anti-Spam Backlash:</span> Recruiters hate "LazyApply". They want verification.</li>
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• The "Bridge" Market:</span> Indian engineers demanding US/Remote jobs.</li>
+                    </ul>
+                </div>
+                <!-- THREATS -->
+                <div class="glass-card p-6 swot-t bg-red-50/20">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">🛡️</span>
+                        <h3 class="text-lg font-bold text-red-800">Threats (External)</h3>
+                    </div>
+                    <ul class="space-y-3">
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• Viral AI:</span> AIApply is growing virally on TikTok.</li>
+                        <li class="flex items-start text-sm text-slate-700"><span class="font-bold mr-2">• LinkedIn Native:</span> If LinkedIn builds "Ask for Referral" natively.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
 
-                <div class="card p-6 bg-slate-800 text-white">
-                    <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-600 pb-2">Novel Contribution</h3>
-                    <p class="text-slate-300 leading-relaxed mb-4">
-                        Most existing literature (Menon, 2022; Gupta, 2024) focuses on <em>either</em> MSW logistics <em>or</em> E-waste policy. Your PhD can bridge this by proposing a <strong>Unified Circularity Index</strong> that measures efficiency across both streams in urban environments.
-                    </p>
-                    <div class="bg-slate-700 rounded p-4 mt-4">
-                        <span class="text-teal-400 font-bold">Key Variable:</span> <span class="text-white">Household Behavioral Compliance vs. Infrastructure Availability</span>
+        <!-- ANALYTICS VIEW -->
+        <section id="view-analytics" class="hidden space-y-8 fade-in">
+            <h2 class="text-2xl font-bold text-slate-900">Geo & Market Analytics</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">Top Startup Hubs (City-Level)</h3>
+                    <div class="chart-container">
+                        <canvas id="hubChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">Target Market Segmentation</h3>
+                    <div class="chart-container">
+                        <canvas id="segmentChart"></canvas>
                     </div>
                 </div>
             </div>
-            
-            <!-- Conceptual Diagram (HTML/CSS) -->
-            <div class="card p-8">
-                 <h3 class="text-lg font-bold text-slate-800 mb-6 text-center">Conceptual Research Model</h3>
-                 <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4">
-                     <!-- Box 1 -->
-                     <div class="bg-white border-2 border-slate-300 p-4 rounded-lg w-full md:w-1/4 text-center">
-                         <div class="font-bold text-slate-700">Inputs</div>
-                         <div class="text-xs text-slate-500 mt-2">Policy (Menon 2022)</div>
-                         <div class="text-xs text-slate-500">Tech (AI/IoT)</div>
-                         <div class="text-xs text-slate-500">Public Awareness</div>
-                     </div>
-                     
-                     <!-- Arrow -->
-                     <div class="text-slate-400 text-2xl hidden md:block"><i class="fa-solid fa-arrow-right"></i></div>
-                     <div class="text-slate-400 text-2xl md:hidden"><i class="fa-solid fa-arrow-down"></i></div>
+        </section>
 
-                     <!-- Box 2 (Process) -->
-                     <div class="bg-teal-50 border-2 border-teal-500 p-4 rounded-lg w-full md:w-1/4 text-center shadow-md">
-                         <div class="font-bold text-teal-800">Process (The Gap)</div>
-                         <div class="text-xs text-teal-600 mt-2">Integration of Informal Sector</div>
-                         <div class="text-xs text-teal-600">Smart Monitoring</div>
-                         <div class="text-xs text-teal-600">Behavioral Nudges</div>
-                     </div>
-                     
-                     <!-- Arrow -->
-                     <div class="text-slate-400 text-2xl hidden md:block"><i class="fa-solid fa-arrow-right"></i></div>
-                     <div class="text-slate-400 text-2xl md:hidden"><i class="fa-solid fa-arrow-down"></i></div>
-
-                     <!-- Box 3 (Output) -->
-                     <div class="bg-white border-2 border-slate-300 p-4 rounded-lg w-full md:w-1/4 text-center">
-                         <div class="font-bold text-slate-700">Outcomes</div>
-                         <div class="text-xs text-slate-500 mt-2">Sustainable Circular Model</div>
-                         <div class="text-xs text-slate-500">Economic Efficiency</div>
-                         <div class="text-xs text-slate-500">Reduced Landfill Load</div>
-                     </div>
-                 </div>
+        <!-- MATRIX VIEW -->
+        <section id="view-matrix" class="hidden space-y-6 fade-in">
+             <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">27-Competitor Detail Matrix</h2>
+                    <p class="text-sm text-slate-500">
+                        <span class="inline-block w-3 h-3 bg-indigo-500 rounded-full mr-1"></span>Referlele 
+                        <span class="inline-block w-3 h-3 bg-amber-400 rounded-full mr-1 ml-2"></span>Priority
+                        <span class="inline-block w-3 h-3 bg-white border border-slate-300 rounded-full mr-1 ml-2"></span>Secondary
+                    </p>
+                </div>
+                <input type="text" id="matrixSearch" placeholder="Search (e.g., 'San Francisco', 'Recruiters')..." class="w-full md:w-80 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
-        </div>
+
+            <div class="table-container">
+                <table class="min-w-max w-full divide-y divide-slate-200 text-left">
+                    <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-500">
+                        <tr>
+                            <th class="px-4 py-4 sticky-col bg-slate-50 shadow-sm">Company Name</th>
+                            <th class="px-4 py-4 text-indigo-700">HQ Location (City)</th>
+                            <th class="px-4 py-4 text-emerald-700">Target Market</th>
+                            <th class="px-4 py-4">Category</th>
+                            <th class="px-4 py-4">Founder(s)</th>
+                            <th class="px-4 py-4">LinkedIn</th>
+                            <th class="px-4 py-4 w-64">Product</th>
+                            <th class="px-4 py-4">Investors</th>
+                            <th class="px-4 py-4">Traffic</th>
+                            <th class="px-4 py-4">Differentiation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixBody" class="text-xs divide-y divide-slate-200">
+                        <!-- JS Injection -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
     </main>
 
-    <!-- JavaScript Logic -->
     <script>
-        // --- DATA STORAGE ---
-        // Simulating the 7 papers based on the provided PDF context and common high-impact topics in this field.
-        // Paper 2 is Vishnu J. Menon (Provided in prompt).
-        const papers = [
-            {
-                id: 1,
-                title: "AI-Driven Sorting: Economic Survey & Employment Impact",
-                author: "Anthropic Research / Govt Sources",
-                year: 2026,
-                type: "Report/Analysis",
-                topic: "E-Waste",
-                methodology: "Quantitative (Economic Index)",
-                objective: "Assess impact of AI on job markets and sorting efficiency.",
-                gap: "Lack of specific application to MSW in developing economies.",
-                findings: "AI increases sorting speed by 40% but displaces low-skill manual labor.",
-                relevance: "High - Use for 'Future Scope' chapter regarding technology.",
-                link: "https://www.anthropic.com/research/anthropic-economic-index-january-2026-report"
-            },
-            {
-                id: 2,
-                title: "Municipal Solid Waste Management - Towards a Sustainable Model",
-                author: "Vishnu J. Menon",
-                year: 2022,
-                type: "PhD Thesis",
-                topic: "MSW",
-                methodology: "Mixed Methods (Case Study)",
-                objective: "Analyze waste management efficiency in Thiruvananthapuram.",
-                gap: "Limited focus on E-waste integration with general MSW streams.",
-                findings: "Decentralized community bins fail without rigorous maintenance schedules.",
-                relevance: "Core - Provides the baseline model for municipal comparison.",
-                link: "Shodhganga Repository"
-            },
-            {
-                id: 3,
-                title: "Segregation at Source: The Indore Model Cornerstone",
-                author: "Amit Dubey",
-                year: 2025, // Extrapolated from 'latest' request
-                type: "Case Study",
-                topic: "MSW",
-                methodology: "Qualitative (Field Observation)",
-                objective: "Identify behavioral drivers of 100% segregation success in Indore.",
-                gap: "Replicability analysis for non-tiered cities is missing.",
-                findings: "Behavioral change (IEC activities) is more critical than infrastructure.",
-                relevance: "High - Use for 'Behavioral Framework' variable.",
-                link: "https://www.linkedin.com/pulse/segregation-source-cornerstone-indores-waste-management-amit-dubey-toe4f"
-            },
-            {
-                id: 4,
-                title: "Impact of AI on Employment in Waste Sectors",
-                author: "Sage University Research",
-                year: 2025,
-                type: "Article/Review",
-                topic: "E-Waste",
-                methodology: "Secondary Data Analysis",
-                objective: "Correlate AI adoption with employment rates in waste processing.",
-                gap: "Lack of longitudinal data on long-term health benefits vs job loss.",
-                findings: "Short term job loss in sorting is offset by higher skilled logistics roles.",
-                relevance: "Medium - Supports the 'Socio-economic' impact argument.",
-                link: "https://sageuniversity.edu.in/blogs/impact-of-artificial-intelligence-on-employment"
-            },
-            {
-                id: 5,
-                title: "Fintech Applications in Green Waste Economies",
-                author: "iResearchNet Compilation",
-                year: 2024,
-                type: "Review",
-                topic: "E-Waste",
-                methodology: "Literature Review",
-                objective: "Explore how fintech can incentivize recycling behavior.",
-                gap: "Practical implementation frameworks for municipal integration.",
-                findings: "Micro-payments for plastic return are effective but require high smartphone penetration.",
-                relevance: "High - Adds a 'Financial' dimension to the thesis.",
-                link: "https://www.iresearchnet.com/"
-            },
-            {
-                id: 6,
-                title: "India's AI Talent Playbook & Urban Planning",
-                author: "Atlantic Council",
-                year: 2024,
-                type: "Policy Paper",
-                topic: "MSW",
-                methodology: "Policy Analysis",
-                objective: "Blueprint for using AI talent in public sector works.",
-                gap: "Specifics on waste management logistics are vague.",
-                findings: "Municipalities lack the data infrastructure to support advanced AI models.",
-                relevance: "Medium - Highlights the 'Infrastructure Gap'.",
-                link: "https://www.atlanticcouncil.org/"
-            },
-            {
-                id: 7,
-                title: "Smart City Solid Waste Strategies",
-                author: "Indore Smart City Dev Corp",
-                year: 2023,
-                type: "Technical Report",
-                topic: "MSW",
-                methodology: "Technical Audit",
-                objective: "Detail the logistical route planning for solid waste.",
-                gap: "Cost-benefit analysis of GPS tracking for small towns.",
-                findings: "Real-time tracking reduced fuel consumption by 20% and missed pickups by 60%.",
-                relevance: "Core - Operational variable for the thesis.",
-                link: "https://www.smartcityindore.org/solid-waste/"
-            }
+        // --- 27-ITEM DATASET (WITH GEO & TARGET) ---
+        const competitors = [
+            // HERO (1)
+            { name: "Referlele", type: "hero", cat: "Verified Network", market: "Seekers & Employees", country: "Bengaluru, India (Est)", founders: "TBD", li: "N/A", bg: "N/A", idea: "Verified work email referrals + AI Match.", inv: "Target Seed", traffic: "Pre-launch", diff: "Trust" },
+
+            // PRIORITY (7)
+            { name: "AIApply", type: "priority", cat: "AI Tooling", market: "Job Seekers", country: "Chicago, USA", founders: "Aidan", li: "link", bg: "USA", idea: "Viral AI resume & auto-apply tool.", inv: "Bootstrapped", traffic: "450k+", diff: "Viral Growth" },
+            { name: "JobRight.ai", type: "priority", cat: "AI Agent", market: "Job Seekers", country: "San Francisco, USA", founders: "Eric Chen", li: "link", bg: "Berkeley", idea: "AI Search Agent.", inv: "Seed", traffic: "120k", diff: "AI Search" },
+            { name: "Referwale", type: "priority", cat: "Community", market: "Tech Workers", country: "Noida, India", founders: "Sumit Kumar", li: "link", bg: "India", idea: "Community platform.", inv: "Bootstrapped", traffic: "45k", diff: "Community" },
+            { name: "Refer.me", type: "priority", cat: "Marketplace", market: "Job Seekers", country: "London, UK", founders: "Daniel Bakh", li: "link", bg: "UK", idea: "P2P referral market.", inv: "Pre-Seed", traffic: "250k", diff: "Credits" },
+            { name: "LazyApply", type: "priority", cat: "Automation", market: "Job Seekers", country: "Jalandhar, India", founders: "Prakhar Gupta", li: "link", bg: "India", idea: "Bulk automation.", inv: "YC S21", traffic: "350k", diff: "Volume" },
+            { name: "Sorce", type: "priority", cat: "Swipe UX", market: "Gen Z", country: "Atlanta, USA", founders: "Bahaa Atwah", li: "link", bg: "Georgia Tech", idea: "Tinder for Jobs.", inv: "YC W22", traffic: "15k", diff: "Gen Z" },
+            { name: "Uproot.site", type: "priority", cat: "Niche Tool", market: "Workday Users", country: "Remote / Global", founders: "Team", li: "N/A", bg: "Global", idea: "Workday bypass.", inv: "Bootstrapped", traffic: "25k", diff: "Niche" },
+
+            // SECONDARY (19)
+            { name: "Simplify.jobs", type: "secondary", cat: "Autofill", market: "Job Seekers", country: "San Francisco, USA", founders: "Michael Yan", li: "link", bg: "Berkeley", idea: "Autofill Extension.", inv: "YC W21", traffic: "2.8M", diff: "Scale" },
+            { name: "Teal", type: "secondary", cat: "Career CRM", market: "Job Seekers", country: "Miami, USA", founders: "Dave Fano", li: "link", bg: "Columbia", idea: "Career CRM.", inv: "Series A", traffic: "1.3M", diff: "CRM" },
+            { name: "Wonsulting", type: "secondary", cat: "Influencer", market: "Students", country: "Los Angeles, USA", founders: "J. Javier", li: "link", bg: "USA", idea: "NetworkAI.", inv: "Bootstrapped", traffic: "620k", diff: "Brand" },
+            { name: "LoopCV", type: "secondary", cat: "RPA", market: "Job Seekers", country: "Patras, Greece", founders: "George P.", li: "link", bg: "Greece", idea: "Job RPA.", inv: "Pre-Seed", traffic: "190k", diff: "RPA" },
+            { name: "Massive", type: "secondary", cat: "Automation", market: "Top Talent", country: "London, UK", founders: "Indiana G.", li: "link", bg: "UK", idea: "Quality Auto.", inv: "YC W21", traffic: "55k", diff: "Curation" },
+            { name: "Weekday", type: "secondary", cat: "Sourcing", market: "Recruiters", country: "San Francisco / Bangalore", founders: "Amit Singh", li: "link", bg: "India", idea: "Recruiter Sourcing.", inv: "YC W21", traffic: "85k", diff: "Recruiter" },
+            { name: "Draftboard", type: "secondary", cat: "Bounties", market: "Referrers", country: "New York, USA", founders: "Zach S.", li: "link", bg: "USA", idea: "Bounties.", inv: "Pre-Seed", traffic: "22k", diff: "Money" },
+            { name: "Careerflow.ai", type: "secondary", cat: "Optimizer", market: "Job Seekers", country: "Pune, India / USA", founders: "Nikita G.", li: "link", bg: "USA", idea: "LI Optimizer.", inv: "Angels", traffic: "320k", diff: "LI" },
+            { name: "Jumbl", type: "secondary", cat: "Aggregator", market: "Remote", country: "Remote / Global", founders: "Unknown", li: "N/A", bg: "N/A", idea: "Job aggregator.", inv: "Unknown", traffic: "10k+", diff: "Aggregation" },
+            { name: "EasyRefer.in", type: "secondary", cat: "Community", market: "Job Seekers", country: "Bengaluru, India", founders: "Unknown", li: "N/A", bg: "India", idea: "Referral exchange.", inv: "Bootstrapped", traffic: "20k+", diff: "Geo-Focus" },
+            { name: "EmployeeReferrals.com", type: "secondary", cat: "B2B", market: "Enterprise", country: "Salt Lake City, USA", founders: "Team", li: "link", bg: "USA", idea: "Enterprise software.", inv: "Venture", traffic: "50k+", diff: "B2B Sales" },
+            { name: "Stark.ai", type: "secondary", cat: "AI Search", market: "Job Seekers", country: "Bengaluru, India", founders: "Unknown", li: "N/A", bg: "India", idea: "AI-driven matching.", inv: "Seed", traffic: "30k+", diff: "AI Matching" },
+            { name: "JobCopilot", type: "secondary", cat: "Automation", market: "Job Seekers", country: "Remote / Global", founders: "Unknown", li: "N/A", bg: "Global", idea: "Auto-apply.", inv: "Bootstrapped", traffic: "15k+", diff: "Extension" },
+            { name: "Getmereferred", type: "secondary", cat: "Service", market: "Job Seekers", country: "Bengaluru, India", founders: "Unknown", li: "N/A", bg: "India", idea: "Referral agency.", inv: "Bootstrapped", traffic: "10k+", diff: "Service" },
+            { name: "Referloops", type: "secondary", cat: "B2B Loop", market: "Companies", country: "India (TBD)", founders: "Unknown", li: "N/A", bg: "India", idea: "Internal Loops.", inv: "Bootstrapped", traffic: "18k", diff: "B2B" },
+            { name: "Call For Referral", type: "secondary", cat: "Service", market: "Job Seekers", country: "Remote / Global", founders: "Group", li: "N/A", bg: "Global", idea: "Manual Service.", inv: "N/A", traffic: "<5k", diff: "Service" },
+            { name: "BoostMyReferral", type: "secondary", cat: "Templates", market: "Job Seekers", country: "India (TBD)", founders: "Vivek D.", li: "link", bg: "India", idea: "Templates.", inv: "Bootstrapped", traffic: "<5k", diff: "Temps" },
+            { name: "Sonara", type: "secondary", cat: "Automation", market: "Job Seekers", country: "Austin, USA", founders: "Victor I.", li: "link", bg: "USA", idea: "Daily Auto.", inv: "Bootstrapped", traffic: "45k", diff: "Daily" },
+            { name: "Pyjama Jobs", type: "secondary", cat: "Remote", market: "Remote Devs", country: "Remote / Global", founders: "Group", li: "N/A", bg: "India", idea: "Remote Jobs.", inv: "Bootstrapped", traffic: "12k", diff: "Remote" }
         ];
 
-        // Derived Gaps for the Matrix
-        const gapsData = [
-            {
-                category: "Informal Sector Integration",
-                papers: "Menon (2022), Sage Univ (2025)",
-                evidence: "Menon notes informal pickers are excluded from formal stats; Sage notes AI might displace them.",
-                application: "Design a module for 'Inclusive Tech' that keeps pickers in the loop."
-            },
-            {
-                category: "Technology Adoption Barriers",
-                papers: "Atlantic Council (2024), Indore Smart City (2023)",
-                evidence: "Atlantic highlights lack of data infra; Indore shows success but high capital cost.",
-                application: "Thesis can propose a 'Low-Cost IoT' framework for Tier-3 cities."
-            },
-            {
-                category: "Behavioral Sustainability",
-                papers: "Dubey (2025), iResearchNet (2024)",
-                evidence: "Behavioral change (Dubey) is hard to sustain without financial incentives (iResearchNet).",
-                application: "Test 'Gamification' as a variable for long-term segregation compliance."
-            },
-            {
-                category: "E-Waste & MSW Convergence",
-                papers: "Menon (2022), Anthropic (2026)",
-                evidence: "Most systems treat them separately (Menon), but AI can sort both (Anthropic).",
-                application: "Propose a 'Unified Collection Logic' to reduce logistics costs."
-            },
-            {
-                category: "Policy vs. Implementation",
-                papers: "Menon (2022), Atlantic Council (2024)",
-                evidence: "Great policies exist on paper but fail due to lack of municipal talent.",
-                application: "Focus thesis on 'Implementation Protocols' rather than just policy recommendation."
-            }
-        ];
-
-        // --- CORE LOGIC ---
-
-        function init() {
-            renderLiteratureCards(papers);
-            renderGapTable();
-            renderCharts();
-        }
-
-        function navigate(viewId) {
-            // Hide all views
-            ['dashboard', 'literature', 'gaps', 'synthesis'].forEach(id => {
-                document.getElementById('view-' + id).classList.add('hidden');
-                document.getElementById('nav-' + id).classList.remove('active', 'text-teal-600', 'border-b-2', 'border-teal-600');
-                document.getElementById('nav-' + id).classList.add('text-slate-500');
-            });
-
-            // Show selected view
-            const selectedView = document.getElementById('view-' + viewId);
-            selectedView.classList.remove('hidden');
+        // --- RENDER DASHBOARD LISTS ---
+        function renderDashboardLists() {
+            // Render Priority Cards
+            const priContainer = document.getElementById('priorityDashboardContainer');
+            const priorities = competitors.filter(c => c.type === 'priority');
             
-            // Update Nav State
-            const activeNav = document.getElementById('nav-' + viewId);
-            activeNav.classList.add('active', 'text-teal-600');
-            activeNav.classList.remove('text-slate-500');
-            
-            // Trigger chart update if dashboard is loaded
-            if (viewId === 'dashboard') {
-                renderCharts(); 
-            }
-        }
-
-        // --- RENDER FUNCTIONS ---
-
-        function renderLiteratureCards(data) {
-            const grid = document.getElementById('literature-grid');
-            grid.innerHTML = '';
-            
-            data.forEach(paper => {
-                const card = document.createElement('div');
-                card.className = 'card p-6 flex flex-col justify-between h-full border hover:border-teal-300 cursor-pointer group';
-                card.onclick = () => alert(`Deep Dive Analysis for: ${paper.title}\n\nObjectives: ${paper.objective}\n\nMethodology: ${paper.methodology}\n\nKey Findings: ${paper.findings}`);
-                
-                const badgeColor = paper.topic === 'MSW' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
-                
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="px-2 py-1 text-xs font-bold rounded ${badgeColor}">${paper.topic}</span>
-                            <span class="text-xs text-slate-400 border border-slate-200 px-2 py-1 rounded">${paper.year}</span>
+            let priHtml = '';
+            priorities.forEach(c => {
+                priHtml += `
+                    <div class="p-4 rounded-lg bg-slate-50 border border-slate-100 hover:shadow-md transition-all">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-slate-800">${c.name}</span>
+                            <span class="text-[9px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-500 font-mono">${c.traffic}</span>
                         </div>
-                        <h3 class="font-bold text-slate-800 text-lg mb-2 group-hover:text-teal-600 transition">${paper.title}</h3>
-                        <p class="text-xs text-slate-500 mb-4"><i class="fa-solid fa-user mr-1"></i> ${paper.author}</p>
-                        
-                        <div class="space-y-2">
-                            <div class="text-sm">
-                                <span class="font-semibold text-slate-700">Gap:</span> 
-                                <span class="text-slate-600">${paper.gap}</span>
-                            </div>
-                            <div class="text-sm">
-                                <span class="font-semibold text-slate-700">Method:</span> 
-                                <span class="text-slate-600">${paper.methodology}</span>
-                            </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold uppercase">${c.cat}</span>
                         </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
-                        <span class="text-xs font-medium text-teal-600">Relevance: ${paper.relevance.split('-')[0]}</span>
-                        <i class="fa-solid fa-arrow-right text-slate-300 group-hover:text-teal-500 transition"></i>
+                `;
+            });
+            priContainer.innerHTML = priHtml;
+
+            // Render Secondary List
+            const secContainer = document.getElementById('secondaryDashboardContainer');
+            const secondaries = competitors.filter(c => c.type === 'secondary');
+            
+            // Group by Category
+            const categories = {};
+            secondaries.forEach(item => {
+                const key = item.cat.includes('Auto') || item.cat.includes('Tool') ? 'Automation & Tools' :
+                            item.cat.includes('Community') || item.cat.includes('Service') ? 'Services & Community' :
+                            'Others';
+                if (!categories[key]) categories[key] = [];
+                categories[key].push(item);
+            });
+
+            let secHtml = '';
+            for (const [catName, items] of Object.entries(categories)) {
+                secHtml += `
+                    <div class="mb-4 last:mb-0">
+                        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 sticky top-0 bg-slate-50 py-1">${catName}</h4>
+                        <div class="flex flex-wrap gap-2">
+                            ${items.map(item => `
+                                <div class="px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-600 flex items-center shadow-sm hover:border-slate-300 transition-colors w-full justify-between">
+                                    <span class="font-medium truncate">${item.name}</span>
+                                    <span class="text-[9px] text-slate-400 bg-slate-100 px-1 rounded ml-2 whitespace-nowrap">${item.traffic}</span>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 `;
-                grid.appendChild(card);
-            });
-        }
-
-        function filterLiterature(category) {
-            if (category === 'all') {
-                renderLiteratureCards(papers);
-            } else {
-                const filtered = papers.filter(p => p.topic === category);
-                renderLiteratureCards(filtered);
             }
+            secContainer.innerHTML = secHtml;
         }
 
-        function renderGapTable() {
-            const tbody = document.getElementById('gap-table-body');
-            tbody.innerHTML = '';
+        // --- RENDER MATRIX TABLE ---
+        function renderTable(data) {
+            const body = document.getElementById('matrixBody');
+            body.innerHTML = '';
             
-            gapsData.forEach(item => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-slate-50 transition';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${item.category}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">${item.papers}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">${item.evidence}</td>
-                    <td class="px-6 py-4 text-sm text-teal-700 font-medium bg-teal-50 rounded">${item.application}</td>
+            const sorted = [...data].sort((a, b) => {
+                const map = { 'hero': 0, 'priority': 1, 'secondary': 2 };
+                return map[a.type] - map[b.type];
+            });
+
+            sorted.forEach(item => {
+                const tr = document.createElement('tr');
+                if (item.type === 'hero') tr.className = "referlele-row font-medium";
+                else if (item.type === 'priority') tr.className = "priority-row";
+                else tr.className = "secondary-row";
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 sticky-col font-bold text-slate-800 shadow-sm whitespace-nowrap">${item.type === 'priority' ? '⚠️ ' : ''}${item.name}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-indigo-700 font-medium">${item.country}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-emerald-700 font-medium">${item.market}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-slate-500 text-[10px] uppercase">${item.cat}</td>
+                    <td class="px-4 py-3 font-medium whitespace-nowrap">${item.founders}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">${item.li !== 'N/A' && item.li !== 'link' ? '<a href="#" class="text-indigo-600 hover:underline">Profile</a>' : '-'}</td>
+                    <td class="px-4 py-3 leading-snug w-64 text-slate-600 min-w-[200px] text-[10px]">${item.idea}</td>
+                    <td class="px-4 py-3 text-indigo-600 font-medium whitespace-nowrap">${item.inv}</td>
+                    <td class="px-4 py-3 font-mono font-bold whitespace-nowrap">${item.traffic}</td>
+                    <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] border border-slate-200">${item.diff}</span></td>
                 `;
-                tbody.appendChild(row);
+                body.appendChild(tr);
             });
         }
 
-        function downloadCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            // Header
-            csvContent += "Gap Category,Supporting Literature,Evidence/Findings,PhD Application\n";
-            
-            // Data
-            gapsData.forEach(row => {
-                let rowStr = `"${row.category}","${row.papers}","${row.evidence}","${row.application}"`;
-                csvContent += rowStr + "\r\n";
-            });
-
-            // Download Trigger
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "PhD_Gap_Analysis_Matrix.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        }
-
-        // --- CHART CONFIGURATION ---
-        let gapChart, methodChart, timelineChart;
-
-        function renderCharts() {
-            // Gap Saturation Chart
-            const ctxGap = document.getElementById('gapChart').getContext('2d');
-            if (gapChart) gapChart.destroy();
-            
-            gapChart = new Chart(ctxGap, {
+        // --- CHARTS ---
+        function initCharts() {
+            // Hub Chart
+            const ctxHub = document.getElementById('hubChart').getContext('2d');
+            new Chart(ctxHub, {
                 type: 'bar',
                 data: {
-                    labels: gapsData.map(g => g.category),
+                    labels: ['San Francisco', 'Bengaluru/Pune/Noida', 'London/UK', 'Remote/Global', 'Other US Cities'],
                     datasets: [{
-                        label: 'Relevance/Frequency in Literature',
-                        data: [4, 2, 3, 2, 5], // Simulated frequency based on mental model
-                        backgroundColor: '#0d9488',
-                        borderRadius: 4
+                        label: 'Competitor Count',
+                        data: [5, 9, 3, 5, 5],
+                        backgroundColor: ['#4f46e5', '#f59e0b', '#ef4444', '#cbd5e1', '#64748b'],
+                        borderRadius: 6
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, grid: { display: false } } }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // Methodology Chart
-            const ctxMethod = document.getElementById('methodChart').getContext('2d');
-            if (methodChart) methodChart.destroy();
-
-            const methods = {};
-            papers.forEach(p => {
-                const key = p.methodology.split(' ')[0]; // Simplified key
-                methods[key] = (methods[key] || 0) + 1;
-            });
-
-            methodChart = new Chart(ctxMethod, {
+            // Segment Chart
+            const ctxSeg = document.getElementById('segmentChart').getContext('2d');
+            new Chart(ctxSeg, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(methods),
+                    labels: ['Job Seekers (B2C)', 'Recruiters/HR (B2B)', 'Gen Z', 'Enterprise'],
                     datasets: [{
-                        data: Object.values(methods),
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'],
-                        borderWidth: 0
+                        data: [18, 3, 2, 4],
+                        backgroundColor: ['#4f46e5', '#f59e0b', '#ef4444', '#cbd5e1'],
+                        borderRadius: 6
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: { legend: { position: 'right' } }
-                }
-            });
-            
-            // Timeline Chart
-             const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
-            if (timelineChart) timelineChart.destroy();
-            
-            // Sort papers by year
-            const sortedPapers = [...papers].sort((a,b) => a.year - b.year);
-            const years = sortedPapers.map(p => p.year);
-            const counts = {};
-            years.forEach(y => counts[y] = (counts[y] || 0) + 1);
-
-            timelineChart = new Chart(ctxTimeline, {
-                type: 'line',
-                data: {
-                    labels: Object.keys(counts),
-                    datasets: [{
-                        label: 'Papers Published',
-                        data: Object.values(counts),
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
             });
         }
 
-        // Initialize App
-        window.onload = init;
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+            document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+        }
 
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDashboardLists();
+            renderTable(competitors);
+            initCharts();
+            
+            document.getElementById('matrixSearch').addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = competitors.filter(c => c.name.toLowerCase().includes(term) || c.country.toLowerCase().includes(term) || c.market.toLowerCase().includes(term));
+                renderTable(filtered);
+            });
+        });
     </script>
 </body>
 </html>
